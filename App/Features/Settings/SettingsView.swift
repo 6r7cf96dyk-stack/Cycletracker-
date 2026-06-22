@@ -17,6 +17,16 @@ struct SettingsView: View {
                 } footer: {
                     Text("Turn symptoms on or off, or add your own. Turning one off hides it from logging but keeps its history.")
                 }
+
+                Section {
+                    NavigationLink {
+                        PrivacyView()
+                    } label: {
+                        Label("Privacy", systemImage: "lock.shield")
+                    }
+                } footer: {
+                    Text("Your data stays on this device. No account, no internet, no tracking.")
+                }
             }
             .navigationTitle("Settings")
         }
