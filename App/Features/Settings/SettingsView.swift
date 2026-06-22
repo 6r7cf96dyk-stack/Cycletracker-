@@ -1,15 +1,23 @@
 import SwiftUI
+import CycleDataKit
 
-/// Placeholder. App lock, data export, delete-all, and symptom management
-/// will live here.
+/// App settings. Data export and delete-all will join the list here later.
 struct SettingsView: View {
     var body: some View {
         NavigationStack {
-            ContentUnavailableView(
-                "Settings",
-                systemImage: "gearshape",
-                description: Text("App lock, data export, and managing your data.")
-            )
+            List {
+                Section {
+                    NavigationLink {
+                        SymptomSettingsView()
+                    } label: {
+                        Label("Symptoms", systemImage: "list.bullet.clipboard")
+                    }
+                } header: {
+                    Text("Logging")
+                } footer: {
+                    Text("Turn symptoms on or off, or add your own. Turning one off hides it from logging but keeps its history.")
+                }
+            }
             .navigationTitle("Settings")
         }
     }
@@ -17,4 +25,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
+        .modelContainer(for: [Period.self, DailyLog.self, Symptom.self, LoggedSymptom.self], inMemory: true)
 }

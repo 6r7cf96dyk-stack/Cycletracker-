@@ -17,6 +17,9 @@ public final class Symptom {
     public var iconName: String?
     /// `true` for seeded symptoms, `false` for user-created ones.
     public var isBuiltIn: Bool
+    /// Stable identity for built-in symptoms (matches `BuiltInSymptom.key`),
+    /// used to reconcile the catalog across app versions. `nil` for custom ones.
+    public var builtInKey: String?
     /// Soft-hide flag — archived symptoms stay out of pickers but keep history.
     public var isArchived: Bool
     public var sortOrder: Int
@@ -32,6 +35,7 @@ public final class Symptom {
         isBuiltIn: Bool = false,
         isArchived: Bool = false,
         sortOrder: Int = 0,
+        builtInKey: String? = nil,
         logs: [LoggedSymptom] = []
     ) {
         self.id = id
@@ -41,6 +45,7 @@ public final class Symptom {
         self.isBuiltIn = isBuiltIn
         self.isArchived = isArchived
         self.sortOrder = sortOrder
+        self.builtInKey = builtInKey
         self.logs = logs
     }
 

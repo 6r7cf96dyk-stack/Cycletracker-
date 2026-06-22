@@ -12,7 +12,7 @@ struct DailyLogServiceTests {
     }
 
     private func seededSymptoms(_ context: ModelContext) throws -> [Symptom] {
-        try SymptomSeeder.seedIfNeeded(in: context)
+        try SymptomSeeder.syncBuiltIns(in: context)
         return try context.fetch(
             FetchDescriptor<Symptom>(sortBy: [SortDescriptor(\.sortOrder)])
         )

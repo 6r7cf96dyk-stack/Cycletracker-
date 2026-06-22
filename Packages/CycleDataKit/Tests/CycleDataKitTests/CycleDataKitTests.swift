@@ -21,17 +21,36 @@ struct CycleDataKitTests {
         #expect(log.mood == .okay)
     }
 
-    @Test("Seeder inserts the built-in catalog once and is idempotent")
+    @Test("Sync inserts the built-in catalog once and is idempotent")
     @MainActor
-    func seederIsIdempotent() throws {
+    func syncIsIdempotent() throws {
         let context = try makeContext()
-        try SymptomSeeder.seedIfNeeded(in: context)
+        try SymptomSeeder.syncBuiltIns(in: context)
         let first = try context.fetchCount(FetchDescriptor<Symptom>())
-        #expect(first == SymptomSeeder.builtIns.count)
+        #expect(first == BuiltInSymptom.catalog.count)
 
-        try SymptomSeeder.seedIfNeeded(in: context)
+        try SymptomSeeder.syncBuiltIns(in: context)
         let second = try context.fetchCount(FetchDescriptor<Symptom>())
         #expect(second == first)
+    }
+
+    @Test("Re-syncing preserves the user's enable/disable choice")
+    @MainActor
+    func syncPreservesArchivedState() throws {
+        let context = try makeContext()
+        try SymptomSeeder.syncBuiltIns(in: context)
+
+        // User disables one built-in.
+        let all = try context.fetch(FetchDescriptor<Symptom>())
+        let target = try #require(all.first { $0.builtInKey == "cramps" })
+        target.isArchived = true
+        try context.save()
+
+        // A later launch must not re-enable it.
+        try SymptomSeeder.syncBuiltIns(in: context)
+        let after = try context.fetch(FetchDescriptor<Symptom>())
+        let stillDisabled = try #require(after.first { $0.builtInKey == "cramps" })
+        #expect(stillDisabled.isArchived == true)
     }
 
     @Test("LoggedSymptom snapshots the symptom name")

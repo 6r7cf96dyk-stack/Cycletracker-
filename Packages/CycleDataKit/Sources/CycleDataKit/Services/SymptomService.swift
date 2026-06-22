@@ -40,4 +40,26 @@ public enum SymptomService {
         try context.save()
         return symptom
     }
+
+    /// Enables or disables a symptom. Disabled (archived) symptoms are hidden
+    /// from the logging picker but keep all historical entries.
+    public static func setArchived(
+        _ archived: Bool,
+        on symptom: Symptom,
+        in context: ModelContext
+    ) throws {
+        symptom.isArchived = archived
+        try context.save()
+    }
+
+    /// Permanently deletes a custom symptom. Built-ins cannot be deleted (turn
+    /// them off instead); this is a no-op for them.
+    public static func deleteCustomSymptom(
+        _ symptom: Symptom,
+        in context: ModelContext
+    ) throws {
+        guard !symptom.isBuiltIn else { return }
+        context.delete(symptom)
+        try context.save()
+    }
 }

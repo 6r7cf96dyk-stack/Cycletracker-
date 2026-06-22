@@ -9,7 +9,7 @@ struct CycleTrackerApp: App {
     init() {
         do {
             let container = try DataStore.container()
-            try SymptomSeeder.seedIfNeeded(in: container.mainContext)
+            try SymptomSeeder.syncBuiltIns(in: container.mainContext)
             self.container = container
         } catch {
             // Local-only store: a failure here means the on-device database

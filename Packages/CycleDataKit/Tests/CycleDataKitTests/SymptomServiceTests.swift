@@ -13,8 +13,8 @@ struct SymptomServiceTests {
     @Test("Adds a custom symptom after the built-in catalog")
     func addsCustomSymptom() throws {
         let context = try makeContext()
-        try SymptomSeeder.seedIfNeeded(in: context)
-        let builtInCount = SymptomSeeder.builtIns.count
+        try SymptomSeeder.syncBuiltIns(in: context)
+        let builtInCount = BuiltInSymptom.catalog.count
 
         let created = try SymptomService.addCustomSymptom(
             name: "Backache", category: .physical, in: context
@@ -40,5 +40,34 @@ struct SymptomServiceTests {
         #expect(throws: SymptomServiceError.duplicateName) {
             try SymptomService.addCustomSymptom(name: "  backache ", in: context)
         }
+    }
+
+    @Test("Enabling/disabling toggles isArchived")
+    func setArchivedTogglesState() throws {
+        let context = try makeContext()
+        let symptom = try SymptomService.addCustomSymptom(name: "Backache", in: context)
+
+        try SymptomService.setArchived(true, on: symptom, in: context)
+        #expect(symptom.isArchived == true)
+
+        try SymptomService.setArchived(false, on: symptom, in: context)
+        #expect(symptom.isArchived == false)
+    }
+
+    @Test("Custom symptoms can be deleted; built-ins cannot")
+    func deleteOnlyRemovesCustom() throws {
+        let context = try makeContext()
+        try SymptomSeeder.syncBuiltIns(in: context)
+        let custom = try SymptomService.addCustomSymptom(name: "Backache", in: context)
+        let builtIn = try #require(
+            try context.fetch(FetchDescriptor<Symptom>()).first { $0.isBuiltIn }
+        )
+
+        try SymptomService.deleteCustomSymptom(builtIn, in: context)   // no-op
+        try SymptomService.deleteCustomSymptom(custom, in: context)    // removed
+
+        let remaining = try context.fetch(FetchDescriptor<Symptom>())
+        #expect(remaining.count == BuiltInSymptom.catalog.count)
+        #expect(!remaining.contains { $0.name == "Backache" })
     }
 }
