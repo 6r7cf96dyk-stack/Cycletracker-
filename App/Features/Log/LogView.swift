@@ -50,6 +50,7 @@ private struct DayLogForm: View {
     @State private var selectedSymptomIDs: Set<PersistentIdentifier> = []
     @State private var intensities: [PersistentIdentifier: Intensity] = [:]
     @State private var showSavedToast = false
+    @State private var showAddSymptom = false
 
     init(day: Date) {
         self.day = day
@@ -81,6 +82,11 @@ private struct DayLogForm: View {
                     .transition(.opacity)
             }
         }
+        .sheet(isPresented: $showAddSymptom) {
+            AddSymptomView { newSymptomID in
+                selectedSymptomIDs.insert(newSymptomID)
+            }
+        }
     }
 
     // MARK: - Sections
@@ -109,13 +115,13 @@ private struct DayLogForm: View {
 
     private var symptomsSection: some View {
         Section("Symptoms") {
-            if symptoms.isEmpty {
-                Text("No symptoms in your catalog yet.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(symptoms) { symptom in
-                    symptomRow(symptom)
-                }
+            ForEach(symptoms) { symptom in
+                symptomRow(symptom)
+            }
+            Button {
+                showAddSymptom = true
+            } label: {
+                Label("Add Custom Symptom", systemImage: "plus.circle")
             }
         }
     }
