@@ -53,6 +53,7 @@ struct EstimatorTests {
         #expect(estimate.cycleLengthStandardDeviation == 0)
         #expect(estimate.averagePeriodLength == 5)          // 4 - 0 + 1, inclusive
         #expect(estimate.cyclesAnalyzed == 3)
+        #expect(estimate.recentCycleLengths == [28, 28, 28])
         #expect(estimate.nextPeriodStartEstimate == day(112)) // 84 + 28
         // stddev 0 → margin floored at 1 day.
         #expect(estimate.nextPeriodStartWindow == day(111)...day(113))
@@ -82,6 +83,7 @@ struct EstimatorTests {
         let estimate = try #require(Estimator.estimate(from: periods, calendar: calendar))
 
         #expect(estimate.averageCycleLength == 28)
+        #expect(estimate.recentCycleLengths == [26, 30, 28])
         #expect(estimate.cycleLengthStandardDeviation == 2)
         // Weighted = (1·26 + 2·30 + 3·28)/6 = 170/6 ≈ 28.3 → 28.
         #expect(estimate.nextPeriodStartEstimate == day(112)) // 84 + 28
@@ -103,9 +105,14 @@ struct EstimatorTests {
         )
 
         #expect(estimate.cyclesAnalyzed == 2)
+        #expect(estimate.recentCycleLengths == [28, 28]) // older 20, 40 excluded
         #expect(estimate.averageCycleLength == 28)
         #expect(estimate.cycleLengthStandardDeviation == 0)
         #expect(estimate.nextPeriodStartEstimate == day(116 + 28))
+
+        // observedCycleLengths reports the full, un-windowed history.
+        let periodsFromStarts = periods
+        #expect(Estimator.observedCycleLengths(from: periodsFromStarts, calendar: calendar) == [20, 40, 28, 28])
     }
 
     // MARK: - Ongoing (open) last period

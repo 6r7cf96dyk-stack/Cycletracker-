@@ -75,6 +75,11 @@ public struct CycleEstimate: Equatable, Sendable {
 
     /// How many cycle observations fed this estimate (after windowing).
     public let cyclesAnalyzed: Int
+
+    /// The recent cycle lengths the estimate is based on, oldest → newest
+    /// (e.g. `[28, 30, 27, 29]`). Handy for "based on your last N cycles" copy
+    /// and charts.
+    public let recentCycleLengths: [Int]
 }
 
 /// Computes a `CycleEstimate` from logged `Period` history.
@@ -101,15 +106,8 @@ public enum Estimator {
         guard sorted.count >= 2 else { return nil }
 
         // 2. Cycle length = whole-day gap between consecutive period starts.
-        //    N periods → N-1 observations. Skip non-positive gaps (e.g. two
-        //    periods logged on the same day).
-        var cycleLengths: [Int] = []
-        for index in 1..<sorted.count {
-            let gap = dayGap(from: sorted[index - 1].startDate,
-                             to: sorted[index].startDate,
-                             calendar: calendar)
-            if gap > 0 { cycleLengths.append(gap) }
-        }
+        //    N periods → N-1 observations.
+        let cycleLengths = consecutiveCycleLengths(of: sorted, calendar: calendar)
 
         // 3. Refuse to guess from too little data.
         let requiredCycles = max(1, minimumCycles)
@@ -160,11 +158,36 @@ public enum Estimator {
             averagePeriodLength: averagePeriodLength,
             nextPeriodStartEstimate: nextStart,
             nextPeriodStartWindow: lower...upper,
-            cyclesAnalyzed: window.count
+            cyclesAnalyzed: window.count,
+            recentCycleLengths: window
         )
     }
 
+    /// All observed cycle lengths (gaps between consecutive period starts),
+    /// chronological. Useful for a full-history chart or a total cycle count.
+    public static func observedCycleLengths(
+        from periods: [Period],
+        calendar: Calendar = .current
+    ) -> [Int] {
+        let sorted = periods.sorted { $0.startDate < $1.startDate }
+        return consecutiveCycleLengths(of: sorted, calendar: calendar)
+    }
+
     // MARK: - Pure helpers (no SwiftData, easy to unit test)
+
+    /// Whole-day gaps between consecutive period starts. Skips non-positive
+    /// gaps (e.g. two periods logged on the same day).
+    private static func consecutiveCycleLengths(of sortedPeriods: [Period], calendar: Calendar) -> [Int] {
+        guard sortedPeriods.count >= 2 else { return [] }
+        var lengths: [Int] = []
+        for index in 1..<sortedPeriods.count {
+            let gap = dayGap(from: sortedPeriods[index - 1].startDate,
+                             to: sortedPeriods[index].startDate,
+                             calendar: calendar)
+            if gap > 0 { lengths.append(gap) }
+        }
+        return lengths
+    }
 
     /// Whole-day difference between two dates, normalized to midnight so the
     /// time-of-day a period was logged never affects the result.
